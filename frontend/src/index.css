@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-800 font-sans;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-sm;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-xl
+           bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium
+           shadow-md shadow-brand-200/50
+           hover:from-brand-600 hover:to-brand-700
+           active:scale-[0.98] transition-all duration-200;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-xl
+           bg-gray-100 text-gray-700 font-medium
+           hover:bg-gray-200 active:scale-[0.98] transition-all duration-200;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-xl
+           text-gray-500 font-medium
+           hover:bg-gray-100 hover:text-gray-700
+           active:scale-[0.98] transition-all duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200
+           bg-white text-gray-800 placeholder-gray-400
+           focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent
+           transition-all duration-200;
+  }
+
+  .textarea-field {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200
+           bg-white text-gray-800 placeholder-gray-400
+           resize-none
+           focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent
+           transition-all duration-200;
+  }
+}
