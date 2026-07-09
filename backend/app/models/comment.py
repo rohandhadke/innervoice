@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from app.database import Base
 
 class Comment(Base):
@@ -14,8 +14,8 @@ class Comment(Base):
     is_anonymous = Column(Boolean, default=False)
     is_flagged = Column(Boolean, default=False)
     is_deleted = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     post = relationship("Post", back_populates="comments")
     user = relationship("User", back_populates="comments")

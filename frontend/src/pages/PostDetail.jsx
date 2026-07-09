@@ -7,9 +7,11 @@ import CommentBox from '../components/CommentBox';
 import useAuthStore from '../store/authStore';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import utc from 'dayjs/plugin/utc';
 import toast from 'react-hot-toast';
 
 dayjs.extend(relativeTime);
+dayjs.extend(utc);
 
 const MOOD_EMOJI = {
   happy: '😊', sad: '😢', anxious: '😰', angry: '😠', confused: '😕',
@@ -92,6 +94,17 @@ export default function PostDetail() {
 
   const isOwner = user && post.user_id === user.id;
 
+  // Resolve display name and avatar for non-anonymous posts
+  const displayName = post.is_anonymous
+    ? 'Anonymous'
+    : isOwner
+      ? user.username
+      : `User #${post.user_id}`;
+  const profilePicture = !post.is_anonymous && isOwner ? user.profile_picture_url : null;
+  const avatarLetter = !post.is_anonymous && isOwner
+    ? user.username[0].toUpperCase()
+    : 'U';
+
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
       {/* Back button */}
@@ -116,16 +129,22 @@ export default function PostDetail() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
+            ) : profilePicture ? (
+              <img
+                src={profilePicture}
+                alt={displayName}
+                className="w-10 h-10 rounded-full object-cover"
+              />
             ) : (
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold">
-                {post.user_id ? 'U' : '?'}
+                {avatarLetter}
               </div>
             )}
             <div>
               <p className="text-sm font-medium text-gray-700">
-                {post.is_anonymous ? 'Anonymous' : `User #${post.user_id}`}
+                {displayName}
               </p>
-              <p className="text-xs text-gray-400">{dayjs(post.created_at).fromNow()}</p>
+              <p className="text-xs text-gray-400">{dayjs.utc(post.created_at).local().fromNow()}</p>
             </div>
           </div>
 

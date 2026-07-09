@@ -59,10 +59,34 @@ export default function Dashboard() {
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
       {/* Welcome Header */}
       <div className="mb-8 animate-fade-in">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-          Hey, {user?.full_name || user?.username} 👋
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">Here's your personal space.</p>
+        <div className="flex items-center gap-4">
+          {user?.profile_picture_url ? (
+            <img
+              src={user.profile_picture_url}
+              alt={user.username}
+              className="w-14 h-14 rounded-full object-cover shadow-md shadow-brand-200/30"
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-xl font-bold shadow-md shadow-brand-200/30">
+              {user?.username?.[0]?.toUpperCase() || '?'}
+            </div>
+          )}
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              Hey, {user?.full_name || user?.username} 👋
+            </h1>
+            <p className="text-gray-500 text-sm mt-0.5">Here's your personal space.</p>
+          </div>
+        </div>
+        <Link
+          to="/edit-profile"
+          className="inline-flex items-center gap-1.5 mt-3 text-xs text-brand-500 font-medium hover:text-brand-600 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+          Edit Profile
+        </Link>
       </div>
 
       {/* Mood Check-in */}
