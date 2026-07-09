@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react';
 import { addComment, getComments, getReplies } from '../api/comments';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import utc from 'dayjs/plugin/utc';
+import useAuthStore from '../store/authStore';
 import toast from 'react-hot-toast';
 
 dayjs.extend(relativeTime);
+dayjs.extend(utc);
 
 function CommentItem({ comment, postId, depth = 0 }) {
   const [replies, setReplies] = useState([]);
@@ -14,6 +17,19 @@ function CommentItem({ comment, postId, depth = 0 }) {
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loadingReplies, setLoadingReplies] = useState(false);
+  const { user } = useAuthStore();
+
+  // Resolve display name and avatar
+  const isOwnComment = user && comment.user_id === user.id;
+  const displayName = comment.is_anonymous
+    ? 'Anonymous'
+    : isOwnComment
+      ? user.username
+      : `User #${comment.user_id}`;
+  const profilePicture = !comment.is_anonymous && isOwnComment ? user.profile_picture_url : null;
+  const avatarLetter = !comment.is_anonymous && isOwnComment
+    ? user.username[0].toUpperCase()
+    : 'U';
 
   const fetchReplies = async () => {
     if (showReplies) {
@@ -58,22 +74,30 @@ function CommentItem({ comment, postId, depth = 0 }) {
     <div className={`${depth > 0 ? 'ml-6 pl-4 border-l-2 border-gray-100' : ''}`}>
       <div className="py-3">
         <div className="flex items-center gap-2 mb-1">
-          <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-            {comment.is_anonymous ? (
+          {comment.is_anonymous ? (
+            <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
               <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-            ) : (
-              <span className="text-[10px] font-bold text-gray-500">
-                {comment.user_id ? 'U' : '?'}
+            </div>
+          ) : profilePicture ? (
+            <img
+              src={profilePicture}
+              alt={displayName}
+              className="w-6 h-6 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center">
+              <span className="text-[10px] font-bold text-white">
+                {avatarLetter}
               </span>
-            )}
-          </div>
+            </div>
+          )}
           <span className="text-xs font-medium text-gray-600">
-            {comment.is_anonymous ? 'Anonymous' : `User #${comment.user_id}`}
+            {displayName}
           </span>
           <span className="text-xs text-gray-400">
-            {dayjs(comment.created_at).fromNow()}
+            {dayjs.utc(comment.created_at).local().fromNow()}
           </span>
         </div>
         <p className="text-sm text-gray-700 leading-relaxed ml-8">

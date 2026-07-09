@@ -43,12 +43,20 @@ export default function Navbar() {
             {isAuthenticated() ? (
               <>
                 <Link
-                  to="/dashboard"
+                  to="/edit-profile"
                   className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-gray-100 transition-colors"
                 >
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-xs font-bold">
-                    {user?.username?.[0]?.toUpperCase() || '?'}
-                  </div>
+                  {user?.profile_picture_url ? (
+                    <img
+                      src={user.profile_picture_url}
+                      alt={user.username}
+                      className="w-7 h-7 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-xs font-bold">
+                      {user?.username?.[0]?.toUpperCase() || '?'}
+                    </div>
+                  )}
                   <span className="text-sm font-medium text-gray-700">{user?.username}</span>
                 </Link>
                 <button onClick={handleLogout} className="btn-ghost text-sm text-red-500 hover:text-red-600 hover:bg-red-50">

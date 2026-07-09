@@ -7,6 +7,7 @@ import WritePost from './pages/WritePost';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import EditProfile from './pages/EditProfile';
 import Dashboard from './pages/Dashboard';
 import MoodJournal from './pages/MoodJournal';
 
@@ -27,6 +28,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/edit-profile"
+            element={
+              <ProtectedRoute>
+                <EditProfile />
               </ProtectedRoute>
             }
           />

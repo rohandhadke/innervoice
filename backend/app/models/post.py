@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from app.database import Base
 import enum
 
@@ -19,8 +19,8 @@ class Post(Base):
     visibility = Column(Enum(VisibilityEnum), default=VisibilityEnum.public)
     is_flagged = Column(Boolean, default=False)
     is_deleted = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="posts")
     comments = relationship("Comment", back_populates="post")

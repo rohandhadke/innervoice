@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from app.models.post import VisibilityEnum
 
 class PostCreate(BaseModel):
