@@ -11,64 +11,76 @@ const REACTIONS = [
   { type: 'sad',    emoji: '😢',  label: 'Sad' },
 ];
 
-export default function ReactionBar({ postId, reactions = [] }) {
+export default function ReactionBar({ postId, reactionCounts = {} }) {
   const [sending, setSending] = useState(null);
-  const [localReactions, setLocalReactions] = useState(reactions);
-  const { user } = useAuthStore();
-
-  // Find the current user's existing reaction (if any)
-  const myReaction = user
-    ? localReactions.find((r) => r.user_id === user.id)
-    : null;
-
-  // Count reactions by type
-  const reactionCounts = REACTIONS.map((r) => ({
-    ...r,
-    count: localReactions.filter((lr) => lr.reaction_type === r.type).length,
-  }));
+  const [localCounts, setLocalCounts] = useState(reactionCounts);
+  const [myReactionType, setMyReactionType] = useState(null);
+  const { user, isAuthenticated } = useAuthStore();
 
   const handleReact = async (type) => {
+    // Check auth before sending
+    if (!isAuthenticated()) {
+      toast.error('Please login to react to posts or if you want to comment openly');
+      return;
+    }
+
     if (sending) return;
     setSending(type);
 
     try {
-      if (myReaction && myReaction.reaction_type === type) {
+      if (myReactionType === type) {
         // Toggle off — same reaction clicked again
-        // Optimistically remove from local state
-        setLocalReactions((prev) => prev.filter((r) => r.id !== myReaction.id));
+        setLocalCounts((prev) => ({
+          ...prev,
+          [type]: Math.max(0, (prev[type] || 0) - 1),
+        }));
+        setMyReactionType(null);
         try {
           await addReaction(postId, type);
-          // Backend returns { detail: "Reaction removed" } with status 200
         } catch {
-          // If the API errors, restore the reaction
-          setLocalReactions((prev) => [...prev, myReaction]);
+          // Restore on error
+          setLocalCounts((prev) => ({
+            ...prev,
+            [type]: (prev[type] || 0) + 1,
+          }));
+          setMyReactionType(type);
         }
-      } else if (myReaction) {
+      } else if (myReactionType) {
         // Switch — different reaction type clicked
-        // Optimistically update local state
-        const updatedReaction = { ...myReaction, reaction_type: type };
-        setLocalReactions((prev) =>
-          prev.map((r) => (r.id === myReaction.id ? updatedReaction : r))
-        );
+        const oldType = myReactionType;
+        setLocalCounts((prev) => ({
+          ...prev,
+          [oldType]: Math.max(0, (prev[oldType] || 0) - 1),
+          [type]: (prev[type] || 0) + 1,
+        }));
+        setMyReactionType(type);
         try {
-          const res = await addReaction(postId, type);
-          // Backend returns the updated reaction object
-          if (res.data && res.data.id) {
-            setLocalReactions((prev) =>
-              prev.map((r) => (r.id === myReaction.id ? res.data : r))
-            );
-          }
+          await addReaction(postId, type);
         } catch {
-          // Restore original on error
-          setLocalReactions((prev) =>
-            prev.map((r) => (r.id === updatedReaction.id ? myReaction : r))
-          );
+          // Restore on error
+          setLocalCounts((prev) => ({
+            ...prev,
+            [oldType]: (prev[oldType] || 0) + 1,
+            [type]: Math.max(0, (prev[type] || 0) - 1),
+          }));
+          setMyReactionType(oldType);
         }
       } else {
-        // New reaction — no existing reaction from this user
-        const res = await addReaction(postId, type);
-        if (res.data && res.data.id) {
-          setLocalReactions((prev) => [...prev, res.data]);
+        // New reaction
+        setLocalCounts((prev) => ({
+          ...prev,
+          [type]: (prev[type] || 0) + 1,
+        }));
+        setMyReactionType(type);
+        try {
+          await addReaction(postId, type);
+        } catch {
+          // Restore on error
+          setLocalCounts((prev) => ({
+            ...prev,
+            [type]: Math.max(0, (prev[type] || 0) - 1),
+          }));
+          setMyReactionType(null);
         }
       }
     } catch (err) {
@@ -80,8 +92,9 @@ export default function ReactionBar({ postId, reactions = [] }) {
 
   return (
     <div className="flex flex-wrap gap-1.5">
-      {reactionCounts.map((r) => {
-        const isMyReaction = myReaction?.reaction_type === r.type;
+      {REACTIONS.map((r) => {
+        const count = localCounts[r.type] || 0;
+        const isMyReaction = myReactionType === r.type;
         return (
           <button
             key={r.type}
@@ -92,7 +105,7 @@ export default function ReactionBar({ postId, reactions = [] }) {
               transition-all duration-200
               ${isMyReaction
                 ? 'bg-brand-100 text-brand-700 ring-2 ring-brand-300 shadow-sm'
-                : r.count > 0
+                : count > 0
                   ? 'bg-brand-50 text-brand-700 hover:bg-brand-100'
                   : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
               }
@@ -101,7 +114,7 @@ export default function ReactionBar({ postId, reactions = [] }) {
             `}
           >
             <span>{r.emoji}</span>
-            {r.count > 0 && <span>{r.count}</span>}
+            {count > 0 && <span>{count}</span>}
           </button>
         );
       })}

@@ -1,13 +1,8 @@
 import { useState, useEffect } from 'react';
 import { addComment, getComments, getReplies } from '../api/comments';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import utc from 'dayjs/plugin/utc';
+import { formatTime } from '../utils/formatTime';
 import useAuthStore from '../store/authStore';
 import toast from 'react-hot-toast';
-
-dayjs.extend(relativeTime);
-dayjs.extend(utc);
 
 function CommentItem({ comment, postId, depth = 0 }) {
   const [replies, setReplies] = useState([]);
@@ -17,7 +12,8 @@ function CommentItem({ comment, postId, depth = 0 }) {
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loadingReplies, setLoadingReplies] = useState(false);
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
+  const loggedIn = isAuthenticated();
 
   // Resolve display name and avatar
   const isOwnComment = user && comment.user_id === user.id;
@@ -55,7 +51,7 @@ function CommentItem({ comment, postId, depth = 0 }) {
     try {
       const res = await addComment(postId, {
         content: replyText.trim(),
-        is_anonymous: isAnonymous,
+        is_anonymous: loggedIn ? isAnonymous : true,
         parent_comment_id: comment.id,
       });
       setReplies((prev) => [...prev, res.data]);
@@ -97,7 +93,7 @@ function CommentItem({ comment, postId, depth = 0 }) {
             {displayName}
           </span>
           <span className="text-xs text-gray-400">
-            {dayjs.utc(comment.created_at).local().fromNow()}
+            {formatTime(comment.created_at)}
           </span>
         </div>
         <p className="text-sm text-gray-700 leading-relaxed ml-8">
@@ -139,15 +135,19 @@ function CommentItem({ comment, postId, depth = 0 }) {
                 {submitting ? '...' : 'Send'}
               </button>
             </div>
-            <label className="flex items-center gap-1.5 mt-1.5 ml-1">
-              <input
-                type="checkbox"
-                checked={isAnonymous}
-                onChange={(e) => setIsAnonymous(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-gray-300 text-brand-500 focus:ring-brand-300"
-              />
-              <span className="text-xs text-gray-400">Anonymous</span>
-            </label>
+            {loggedIn ? (
+              <label className="flex items-center gap-1.5 mt-1.5 ml-1">
+                <input
+                  type="checkbox"
+                  checked={isAnonymous}
+                  onChange={(e) => setIsAnonymous(e.target.checked)}
+                  className="w-3.5 h-3.5 rounded border-gray-300 text-brand-500 focus:ring-brand-300"
+                />
+                <span className="text-xs text-gray-400">Anonymous</span>
+              </label>
+            ) : (
+              <p className="text-xs text-gray-400 mt-1.5 ml-1">You are replying anonymously</p>
+            )}
           </form>
         )}
 
@@ -175,6 +175,8 @@ export default function CommentBox({ postId }) {
   const [text, setText] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const { isAuthenticated } = useAuthStore();
+  const loggedIn = isAuthenticated();
 
   useEffect(() => {
     fetchComments();
@@ -199,7 +201,7 @@ export default function CommentBox({ postId }) {
     try {
       const res = await addComment(postId, {
         content: text.trim(),
-        is_anonymous: isAnonymous,
+        is_anonymous: loggedIn ? isAnonymous : true,
       });
       setComments((prev) => [...prev, res.data]);
       setText('');
@@ -260,15 +262,19 @@ export default function CommentBox({ postId }) {
             )}
           </button>
         </div>
-        <label className="flex items-center gap-1.5 mt-2 ml-1">
-          <input
-            type="checkbox"
-            checked={isAnonymous}
-            onChange={(e) => setIsAnonymous(e.target.checked)}
-            className="w-3.5 h-3.5 rounded border-gray-300 text-brand-500 focus:ring-brand-300"
-          />
-          <span className="text-xs text-gray-400">Post anonymously</span>
-        </label>
+        {loggedIn ? (
+          <label className="flex items-center gap-1.5 mt-2 ml-1">
+            <input
+              type="checkbox"
+              checked={isAnonymous}
+              onChange={(e) => setIsAnonymous(e.target.checked)}
+              className="w-3.5 h-3.5 rounded border-gray-300 text-brand-500 focus:ring-brand-300"
+            />
+            <span className="text-xs text-gray-400">Post anonymously</span>
+          </label>
+        ) : (
+          <p className="text-xs text-gray-400 mt-2 ml-1">You are commenting anonymously</p>
+        )}
       </form>
     </div>
   );

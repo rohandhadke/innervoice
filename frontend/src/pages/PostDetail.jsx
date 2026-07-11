@@ -5,13 +5,8 @@ import { savePost, unsavePost } from '../api/saved';
 import ReactionBar from '../components/ReactionBar';
 import CommentBox from '../components/CommentBox';
 import useAuthStore from '../store/authStore';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import utc from 'dayjs/plugin/utc';
+import { formatTime } from '../utils/formatTime';
 import toast from 'react-hot-toast';
-
-dayjs.extend(relativeTime);
-dayjs.extend(utc);
 
 const MOOD_EMOJI = {
   happy: '😊', sad: '😢', anxious: '😰', angry: '😠', confused: '😕',
@@ -94,16 +89,11 @@ export default function PostDetail() {
 
   const isOwner = user && post.user_id === user.id;
 
-  // Resolve display name and avatar for non-anonymous posts
-  const displayName = post.is_anonymous
-    ? 'Anonymous'
-    : isOwner
-      ? user.username
-      : `User #${post.user_id}`;
-  const profilePicture = !post.is_anonymous && isOwner ? user.profile_picture_url : null;
-  const avatarLetter = !post.is_anonymous && isOwner
-    ? user.username[0].toUpperCase()
-    : 'U';
+  // Resolve display name and avatar from backend author object
+  const author = post.author; // null for anonymous posts
+  const displayName = author ? author.username : 'Anonymous';
+  const profilePicture = author?.profile_picture_url || null;
+  const avatarLetter = author ? author.username[0].toUpperCase() : '?';
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
@@ -123,7 +113,7 @@ export default function PostDetail() {
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            {post.is_anonymous ? (
+            {!author ? (
               <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
                 <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -144,7 +134,7 @@ export default function PostDetail() {
               <p className="text-sm font-medium text-gray-700">
                 {displayName}
               </p>
-              <p className="text-xs text-gray-400">{dayjs.utc(post.created_at).local().fromNow()}</p>
+              <p className="text-xs text-gray-400">{formatTime(post.created_at)}</p>
             </div>
           </div>
 
@@ -166,7 +156,7 @@ export default function PostDetail() {
 
         {/* Actions */}
         <div className="flex items-center justify-between border-t border-gray-100 pt-4">
-          <ReactionBar postId={post.id} reactions={post.reactions || []} />
+          <ReactionBar postId={post.id} reactionCounts={post.reaction_counts || {}} />
 
           <div className="flex items-center gap-2">
             {isAuthenticated() && (
