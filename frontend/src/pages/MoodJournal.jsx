@@ -12,7 +12,12 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import utc from 'dayjs/plugin/utc';
 import toast from 'react-hot-toast';
+
+dayjs.extend(relativeTime);
+dayjs.extend(utc);
 
 // Map mood to a numeric value for the chart
 const MOOD_VALUES = {
@@ -97,10 +102,10 @@ export default function MoodJournal() {
   // Prepare chart data — last 30 days
   const thirtyDaysAgo = dayjs().subtract(30, 'day');
   const chartData = logs
-    .filter((log) => dayjs(log.created_at).isAfter(thirtyDaysAgo))
+    .filter((log) => dayjs.utc(log.created_at).local().isAfter(thirtyDaysAgo))
     .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
     .map((log) => ({
-      date: dayjs(log.created_at).format('MMM D'),
+      date: dayjs.utc(log.created_at).local().format('MMM D'),
       value: MOOD_VALUES[log.mood] || 5,
       mood: log.mood,
       note: log.note,
@@ -228,7 +233,7 @@ export default function MoodJournal() {
                       {log.mood}
                     </span>
                     <span className="text-xs text-gray-400">
-                      {dayjs(log.created_at).format('MMM D, YYYY • h:mm A')}
+                      {dayjs.utc(log.created_at).local().format('MMM D, YYYY • h:mm A')}
                     </span>
                   </div>
                   {log.note && (
