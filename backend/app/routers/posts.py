@@ -9,11 +9,29 @@ from app.models.comment import Comment
 from app.schemas.post import PostCreate, PostResponse, PostUpdate, AuthorResponse, ReactionSummary
 from app.utils.dependencies import get_current_user, get_optional_user
 from app.models.user import User
+import bleach
 
 router = APIRouter(prefix="/api/posts", tags=["Posts"])
 
+# allowed HTML tags and attributes for rich text content
+ALLOWED_TAGS = [
+    "b", "i", "u", "em", "strong", "a",
+    "ul", "ol", "li", "blockquote",
+    "code", "p", "br"
+]
+ALLOWED_ATTRIBUTES = {
+    "a": ["href", "target", "rel"]
+}
+
+def sanitize_content(content: str) -> str:
+    return bleach.clean(
+        content,
+        tags=ALLOWED_TAGS,
+        attributes=ALLOWED_ATTRIBUTES,
+        strip=True
+    )
+
 def build_post_response(post: Post, db: Session) -> dict:
-    # author info — only for non-anonymous posts
     author = None
     if not post.is_anonymous and post.user_id:
         user = db.query(User).filter(User.id == post.user_id).first()
@@ -23,14 +41,12 @@ def build_post_response(post: Post, db: Session) -> dict:
                 profile_picture_url=user.profile_picture_url
             )
 
-    # fetch reactions and build counts
     raw_reactions = db.query(Reaction).filter(Reaction.post_id == post.id).all()
     reaction_counts = {r.value: 0 for r in ReactionTypeEnum}
     for r in raw_reactions:
         reaction_counts[r.reaction_type.value] += 1
     total_reactions = sum(reaction_counts.values())
 
-    # serialize reactions using Pydantic schema
     reactions = [
         ReactionSummary(
             id=r.id,
@@ -41,7 +57,6 @@ def build_post_response(post: Post, db: Session) -> dict:
         for r in raw_reactions
     ]
 
-    # comment count
     comment_count = db.query(Comment).filter(
         Comment.post_id == post.id,
         Comment.is_deleted == False
@@ -66,7 +81,7 @@ def build_post_response(post: Post, db: Session) -> dict:
 @router.post("/", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
 def create_post(data: PostCreate, db: Session = Depends(get_db), current_user: Optional[User] = Depends(get_optional_user)):
     post = Post(
-        content=data.content,
+        content=sanitize_content(data.content),
         is_anonymous=data.is_anonymous,
         mood=data.mood,
         visibility=data.visibility,
@@ -102,6 +117,8 @@ def update_post(post_id: int, data: PostUpdate, db: Session = Depends(get_db), c
     if not post:
         raise HTTPException(status_code=404, detail="Post not found or not authorized")
     for field, value in data.model_dump(exclude_none=True).items():
+        if field == "content":
+            value = sanitize_content(value)
         setattr(post, field, value)
     db.commit()
     db.refresh(post)

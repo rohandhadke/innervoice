@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getPost, deletePost } from '../api/posts';
-import { savePost, unsavePost } from '../api/saved';
+import { savePost, unsavePost, getSavedPosts } from '../api/saved';
 import ReactionBar from '../components/ReactionBar';
 import CommentBox from '../components/CommentBox';
 import useAuthStore from '../store/authStore';
@@ -25,6 +25,7 @@ export default function PostDetail() {
 
   useEffect(() => {
     fetchPost();
+    checkSavedStatus();
   }, [postId]);
 
   const fetchPost = async () => {
@@ -37,6 +38,17 @@ export default function PostDetail() {
       navigate('/');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkSavedStatus = async () => {
+    if (!isAuthenticated()) return;
+    try {
+      const res = await getSavedPosts();
+      const isSaved = res.data.some((item) => item.post_id === parseInt(postId));
+      setSaved(isSaved);
+    } catch {
+      // Silently fail — default to unsaved
     }
   };
 
@@ -113,27 +125,38 @@ export default function PostDetail() {
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
+            {/* Avatar — clickable if not anonymous */}
             {!author ? (
               <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
                 <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-            ) : profilePicture ? (
-              <img
-                src={profilePicture}
-                alt={displayName}
-                className="w-10 h-10 rounded-full object-cover"
-              />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold">
-                {avatarLetter}
-              </div>
+              <Link to={`/user/${author.username}`} className="hover:opacity-80 transition-opacity">
+                {profilePicture ? (
+                  <img
+                    src={profilePicture}
+                    alt={displayName}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold">
+                    {avatarLetter}
+                  </div>
+                )}
+              </Link>
             )}
             <div>
-              <p className="text-sm font-medium text-gray-700">
-                {displayName}
-              </p>
+              {author ? (
+                <Link to={`/user/${author.username}`} className="text-sm font-medium text-gray-700 hover:text-brand-500 transition-colors">
+                  {displayName}
+                </Link>
+              ) : (
+                <p className="text-sm font-medium text-gray-700">
+                  {displayName}
+                </p>
+              )}
               <p className="text-xs text-gray-400">{formatTime(post.created_at)}</p>
             </div>
           </div>
@@ -147,11 +170,12 @@ export default function PostDetail() {
           </div>
         </div>
 
-        {/* Content */}
+        {/* Content — rendered as HTML */}
         <div className="mb-6">
-          <p className="text-gray-800 leading-relaxed text-[16px] whitespace-pre-wrap">
-            {post.content}
-          </p>
+          <div
+            className="prose prose-sm max-w-none text-gray-800 leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
         </div>
 
         {/* Actions */}

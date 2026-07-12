@@ -1,30 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
 import { createPost } from '../api/posts';
 import { getTags } from '../api/tags';
 import MoodPicker from '../components/MoodPicker';
+import RichTextEditor from '../components/RichTextEditor';
 import useAuthStore from '../store/authStore';
 import toast from 'react-hot-toast';
 
 export default function WritePost() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+  const [content, setContent] = useState('');
   const [mood, setMood] = useState(null);
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [visibility, setVisibility] = useState('public');
   const [tags, setTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [submitting, setSubmitting] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    watch,
-  } = useForm();
-
-  const contentValue = watch('content', '');
 
   useEffect(() => {
     fetchTags();
@@ -45,11 +37,18 @@ export default function WritePost() {
     );
   };
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    // Strip HTML to check content length
+    const stripped = content.replace(/<[^>]*>/g, '').trim();
+    if (stripped.length < 10) {
+      toast.error('Write at least 10 characters');
+      return;
+    }
     setSubmitting(true);
     try {
       const payload = {
-        content: data.content,
+        content,
         is_anonymous: isAnonymous,
         mood,
         visibility,
@@ -65,6 +64,9 @@ export default function WritePost() {
     }
   };
 
+  // Strip HTML for character count
+  const charCount = content.replace(/<[^>]*>/g, '').length;
+
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
       <div className="text-center mb-8 animate-fade-in">
@@ -76,22 +78,18 @@ export default function WritePost() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 animate-slide-up">
-        {/* Content */}
+      <form onSubmit={onSubmit} className="space-y-6 animate-slide-up">
+        {/* Content — Rich Text Editor */}
         <div className="glass-card p-5">
-          <textarea
-            {...register('content', {
-              required: 'Please write something before sharing',
-              minLength: { value: 10, message: 'Write at least 10 characters' },
-            })}
-            rows={6}
+          <RichTextEditor
+            content=""
+            onChange={(html) => setContent(html)}
             placeholder="I've been feeling..."
-            className="textarea-field text-[16px] leading-relaxed border-none focus:ring-0 p-0 bg-transparent"
           />
           <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-            <span className="text-xs text-gray-400">{contentValue.length} characters</span>
-            {errors.content && (
-              <span className="text-xs text-red-500">{errors.content.message}</span>
+            <span className="text-xs text-gray-400">{charCount} characters</span>
+            {charCount > 0 && charCount < 10 && (
+              <span className="text-xs text-red-500">Write at least 10 characters</span>
             )}
           </div>
         </div>

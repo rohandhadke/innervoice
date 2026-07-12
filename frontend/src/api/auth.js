@@ -17,3 +17,9 @@ export const updateMe = (data) =>
 
 export const getUserByUsername = (username) =>
   api.get(`/api/users/${username}`);
+
+export const sendOtp = (data) =>
+  api.post('/api/auth/send-otp', data);
+
+export const verifyOtp = (data) =>
+  api.post('/api/auth/verify-otp', data);

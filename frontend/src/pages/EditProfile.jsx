@@ -1,8 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { updateMe } from '../api/auth';
+import { updateMe, getMe } from '../api/auth';
 import useAuthStore from '../store/authStore';
 import toast from 'react-hot-toast';
+
+const GENDER_OPTIONS = [
+  { value: '', label: 'Select gender' },
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'other', label: 'Other' },
+  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
+];
 
 export default function EditProfile() {
   const navigate = useNavigate();
@@ -12,19 +20,27 @@ export default function EditProfile() {
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [profilePictureUrl, setProfilePictureUrl] = useState(user?.profile_picture_url || '');
+  const [phoneNumber, setPhoneNumber] = useState(user?.phone_number || '');
+  const [dateOfBirth, setDateOfBirth] = useState(user?.date_of_birth || '');
+  const [gender, setGender] = useState(user?.gender || '');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await updateMe({
+      await updateMe({
         full_name: fullName || null,
         bio: bio || null,
         profile_picture_url: profilePictureUrl || null,
+        phone_number: phoneNumber || null,
+        date_of_birth: dateOfBirth || null,
+        gender: gender || null,
       });
+      // Refresh user data from server
+      const res = await getMe();
       setUser(res.data);
       toast.success('Profile updated 💜');
-      navigate(`/user/${user.username}`);
+      navigate('/profile');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Could not update profile');
     } finally {
@@ -33,7 +49,7 @@ export default function EditProfile() {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4">
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md animate-slide-up">
         {/* Header */}
         <div className="text-center mb-8">
@@ -112,6 +128,45 @@ export default function EditProfile() {
                 className="input-field"
               />
               <p className="text-xs text-gray-400 mt-1">Paste a link to your profile image</p>
+            </div>
+
+            {/* Phone Number */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone Number</label>
+              <input
+                type="text"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+1234567890"
+                className="input-field"
+              />
+            </div>
+
+            {/* Date of Birth */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Date of Birth</label>
+              <input
+                type="date"
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                className="input-field"
+              />
+            </div>
+
+            {/* Gender */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Gender</label>
+              <select
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                className="input-field"
+              >
+                {GENDER_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Actions */}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { addComment, getComments, getReplies } from '../api/comments';
 import { formatTime } from '../utils/formatTime';
 import useAuthStore from '../store/authStore';
@@ -89,9 +90,15 @@ function CommentItem({ comment, postId, depth = 0 }) {
               </span>
             </div>
           )}
-          <span className="text-xs font-medium text-gray-600">
-            {displayName}
-          </span>
+          {!comment.is_anonymous && isOwnComment ? (
+            <Link to={`/user/${user.username}`} className="text-xs font-medium text-gray-600 hover:text-brand-500 transition-colors">
+              {displayName}
+            </Link>
+          ) : (
+            <span className="text-xs font-medium text-gray-600">
+              {displayName}
+            </span>
+          )}
           <span className="text-xs text-gray-400">
             {formatTime(comment.created_at)}
           </span>
