@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { formatTime } from '../utils/formatTime';
 
 const MOOD_EMOJI = {
@@ -6,15 +6,31 @@ const MOOD_EMOJI = {
   grateful: '🙏', lost: '🌫️', hopeful: '🌟', numb: '😶', exhausted: '😩',
 };
 
+// Strip HTML tags for preview text
+function stripHtml(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+}
+
 export default function PostCard({ post }) {
+  const navigate = useNavigate();
+  const plainContent = stripHtml(post.content);
   const previewContent =
-    post.content.length > 220 ? post.content.slice(0, 220) + '…' : post.content;
+    plainContent.length > 220 ? plainContent.slice(0, 220) + '…' : plainContent;
 
   // Resolve display name and avatar from backend author object
   const author = post.author; // null for anonymous posts
   const displayName = author ? author.username : 'Anonymous';
   const profilePicture = author?.profile_picture_url || null;
   const avatarLetter = author ? author.username[0].toUpperCase() : '?';
+
+  const handleAuthorClick = (e) => {
+    if (!author) return;
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/user/${author.username}`);
+  };
 
   return (
     <Link
@@ -24,25 +40,37 @@ export default function PostCard({ post }) {
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          {!author ? (
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-          ) : profilePicture ? (
-            <img
-              src={profilePicture}
-              alt={displayName}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-xs font-bold">
-              {avatarLetter}
-            </div>
-          )}
+          {/* Avatar — clickable if not anonymous */}
+          <div
+            onClick={handleAuthorClick}
+            className={author ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}
+          >
+            {!author ? (
+              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+            ) : profilePicture ? (
+              <img
+                src={profilePicture}
+                alt={displayName}
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-xs font-bold">
+                {avatarLetter}
+              </div>
+            )}
+          </div>
           <div>
-            <span className="text-sm font-medium text-gray-700">
+            {/* Username — clickable if not anonymous */}
+            <span
+              onClick={handleAuthorClick}
+              className={`text-sm font-medium text-gray-700 ${
+                author ? 'cursor-pointer hover:text-brand-500 transition-colors' : ''
+              }`}
+            >
               {displayName}
             </span>
             <span className="text-xs text-gray-400 ml-2">{formatTime(post.created_at)}</span>
@@ -57,7 +85,7 @@ export default function PostCard({ post }) {
         )}
       </div>
 
-      {/* Content */}
+      {/* Content — plain text preview */}
       <p className="text-gray-700 leading-relaxed text-[15px] mb-4 group-hover:text-gray-800 transition-colors">
         {previewContent}
       </p>

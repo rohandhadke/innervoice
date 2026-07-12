@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import UserResponse, UserUpdate
+from app.models.post import Post
+from app.schemas.user import UserResponse, UserUpdate, PublicUserResponse
+from app.schemas.post import PostResponse
 from app.utils.dependencies import get_current_user
 
 router = APIRouter(prefix="/api/users", tags=["Users"])
@@ -19,9 +22,23 @@ def update_my_profile(data: UserUpdate, db: Session = Depends(get_db), current_u
     db.refresh(current_user)
     return current_user
 
-@router.get("/{username}", response_model=UserResponse)
+@router.get("/{username}", response_model=PublicUserResponse)
 def get_user_by_username(username: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == username, User.is_active == True).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+@router.get("/{username}/posts", response_model=List[PostResponse])
+def get_user_posts(username: str, db: Session = Depends(get_db)):
+    from app.routers.posts import build_post_response
+    user = db.query(User).filter(User.username == username, User.is_active == True).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    posts = db.query(Post).filter(
+        Post.user_id == user.id,
+        Post.is_anonymous == False,
+        Post.is_deleted == False,
+        Post.visibility == "public"
+    ).order_by(Post.created_at.desc()).all()
+    return [build_post_response(post, db) for post in posts]

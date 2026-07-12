@@ -1,7 +1,14 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Date, Enum
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from app.database import Base
+import enum
+
+class GenderEnum(str, enum.Enum):
+    male = "male"
+    female = "female"
+    other = "other"
+    prefer_not_to_say = "prefer_not_to_say"
 
 class User(Base):
     __tablename__ = "users"
@@ -13,8 +20,13 @@ class User(Base):
     full_name = Column(String(100), nullable=True)
     bio = Column(Text, nullable=True)
     profile_picture_url = Column(String(500), nullable=True)
+    phone_number = Column(String(20), nullable=True, unique=True)
+    date_of_birth = Column(Date, nullable=True)
+    gender = Column(Enum(GenderEnum), nullable=True)
     is_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
+    email_otp = Column(String(6), nullable=True)
+    email_otp_expires_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 

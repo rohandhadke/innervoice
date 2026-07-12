@@ -7,7 +7,10 @@ import WritePost from './pages/WritePost';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import PublicProfile from './pages/PublicProfile';
 import EditProfile from './pages/EditProfile';
+import VerifyEmail from './pages/VerifyEmail';
+import Settings from './pages/Settings';
 import Dashboard from './pages/Dashboard';
 import MoodJournal from './pages/MoodJournal';
 
@@ -22,7 +25,15 @@ export default function App() {
           <Route path="/write" element={<WritePost />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/user/:username" element={<Profile />} />
+          <Route path="/user/:username" element={<PublicProfile />} />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/dashboard"
             element={
@@ -36,6 +47,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <EditProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/verify-email"
+            element={
+              <ProtectedRoute>
+                <VerifyEmail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             }
           />
