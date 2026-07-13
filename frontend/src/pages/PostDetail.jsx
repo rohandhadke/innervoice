@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getPost, deletePost } from '../api/posts';
 import { savePost, unsavePost, getSavedPosts } from '../api/saved';
@@ -23,12 +23,7 @@ export default function PostDetail() {
   const [savingPost, setSavingPost] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    fetchPost();
-    checkSavedStatus();
-  }, [postId]);
-
-  const fetchPost = async () => {
+  const fetchPost = useCallback(async () => {
     setLoading(true);
     try {
       const res = await getPost(postId);
@@ -39,9 +34,9 @@ export default function PostDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [postId, navigate]);
 
-  const checkSavedStatus = async () => {
+  const checkSavedStatus = useCallback(async () => {
     if (!isAuthenticated()) return;
     try {
       const res = await getSavedPosts();
@@ -50,7 +45,12 @@ export default function PostDetail() {
     } catch {
       // Silently fail — default to unsaved
     }
-  };
+  }, [postId, isAuthenticated]);
+
+  useEffect(() => {
+    fetchPost();
+    checkSavedStatus();
+  }, [fetchPost, checkSavedStatus]);
 
   const handleSave = async () => {
     if (!isAuthenticated()) {

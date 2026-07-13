@@ -16,7 +16,7 @@ export default function Settings() {
     if (saved === 'dark') {
       setDarkMode(true);
     }
-  }, []);
+  }, [isAuthenticated, navigate]);
 
   const toggleDarkMode = () => {
     const next = !darkMode;

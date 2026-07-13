@@ -21,7 +21,7 @@ export default function VerifyEmail() {
       navigate('/login');
     }
     return () => clearInterval(timerRef.current);
-  }, []);
+  }, [isAuthenticated, navigate]);
 
   const startTimer = () => {
     setSecondsLeft(OTP_TIMER_SECONDS);
