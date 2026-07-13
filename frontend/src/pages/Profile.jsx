@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getMe } from '../api/auth';
 import { getPosts, getPost } from '../api/posts';
@@ -20,25 +20,16 @@ export default function Profile() {
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingSaved, setLoadingSaved] = useState(false);
 
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate('/login');
-      return;
-    }
-    refreshUser();
-    fetchMyPosts();
-  }, []);
-
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const res = await getMe();
       setUser(res.data);
     } catch {
       // Use cached user data
     }
-  };
+  }, [setUser]);
 
-  const fetchMyPosts = async () => {
+  const fetchMyPosts = useCallback(async () => {
     setLoadingPosts(true);
     try {
       const res = await getPosts({ limit: 100 });
@@ -49,7 +40,16 @@ export default function Profile() {
     } finally {
       setLoadingPosts(false);
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate('/login');
+      return;
+    }
+    refreshUser();
+    fetchMyPosts();
+  }, [isAuthenticated, navigate, refreshUser, fetchMyPosts]);
 
   const fetchSavedPosts = async () => {
     if (savedPosts.length > 0) return; // already loaded

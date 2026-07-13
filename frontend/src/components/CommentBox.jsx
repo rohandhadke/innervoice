@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { addComment, getComments, getReplies } from '../api/comments';
 import { formatTime } from '../utils/formatTime';
@@ -185,11 +185,7 @@ export default function CommentBox({ postId }) {
   const { isAuthenticated } = useAuthStore();
   const loggedIn = isAuthenticated();
 
-  useEffect(() => {
-    fetchComments();
-  }, [postId]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     setLoading(true);
     try {
       const res = await getComments(postId);
@@ -199,7 +195,11 @@ export default function CommentBox({ postId }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [postId]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

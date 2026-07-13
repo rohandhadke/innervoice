@@ -15,7 +15,7 @@ export default function ReactionBar({ postId, reactionCounts = {} }) {
   const [sending, setSending] = useState(null);
   const [localCounts, setLocalCounts] = useState(reactionCounts);
   const [myReactionType, setMyReactionType] = useState(null);
-  const { user, isAuthenticated } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
 
   const handleReact = async (type) => {
     // Check auth before sending

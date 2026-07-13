@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getPosts } from '../api/posts';
 import { getSavedPosts } from '../api/saved';
@@ -17,11 +17,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [moodLogging, setMoodLogging] = useState(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [postsRes, savedRes] = await Promise.all([
@@ -36,7 +32,11 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleMoodLog = async (mood) => {
     setMoodLogging(mood);
