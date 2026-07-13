@@ -16,17 +16,35 @@ function CommentItem({ comment, postId, depth = 0 }) {
   const { user, isAuthenticated } = useAuthStore();
   const loggedIn = isAuthenticated();
 
-  // Resolve display name and avatar
+  // Resolve display name and avatar using backend's author field
   const isOwnComment = user && comment.user_id === user.id;
-  const displayName = comment.is_anonymous
-    ? 'Anonymous'
-    : isOwnComment
-      ? user.username
-      : `User #${comment.user_id}`;
-  const profilePicture = !comment.is_anonymous && isOwnComment ? user.profile_picture_url : null;
-  const avatarLetter = !comment.is_anonymous && isOwnComment
-    ? user.username[0].toUpperCase()
-    : 'U';
+  const author = comment.author; // { username, profile_picture_url } from backend
+
+  let displayName, profilePicture, avatarLetter, authorUsername;
+
+  if (comment.is_anonymous) {
+    displayName = 'Anonymous';
+    profilePicture = null;
+    avatarLetter = null;
+    authorUsername = null;
+  } else if (author?.username) {
+    // Backend provided author info — use it (works for ALL users)
+    displayName = author.username;
+    profilePicture = author.profile_picture_url;
+    avatarLetter = author.username[0].toUpperCase();
+    authorUsername = author.username;
+  } else if (isOwnComment && user) {
+    // Fallback for own comment if author field is missing
+    displayName = user.username;
+    profilePicture = user.profile_picture_url;
+    avatarLetter = user.username[0].toUpperCase();
+    authorUsername = user.username;
+  } else {
+    displayName = 'Unknown';
+    profilePicture = null;
+    avatarLetter = '?';
+    authorUsername = null;
+  }
 
   const fetchReplies = async () => {
     if (showReplies) {
@@ -90,8 +108,8 @@ function CommentItem({ comment, postId, depth = 0 }) {
               </span>
             </div>
           )}
-          {!comment.is_anonymous && isOwnComment ? (
-            <Link to={`/user/${user.username}`} className="text-xs font-medium text-gray-600 hover:text-brand-500 transition-colors">
+          {!comment.is_anonymous && authorUsername ? (
+            <Link to={`/user/${authorUsername}`} className="text-xs font-medium text-gray-600 hover:text-brand-500 transition-colors">
               {displayName}
             </Link>
           ) : (
