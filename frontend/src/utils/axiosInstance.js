@@ -2,7 +2,7 @@ import axios from 'axios';
 import useAuthStore from '../store/authStore';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: 'https://innervoice-y7ti.onrender.com',
   headers: {
     'Content-Type': 'application/json',
   },
