@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import { useState, useRef, useEffect } from 'react';
+import appLogo from '../assets/png-favicon.png';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -33,11 +34,14 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group" onClick={() => setMobileOpen(false)}>
+            {/* 
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-md shadow-brand-200/50 group-hover:shadow-lg group-hover:shadow-brand-200/70 transition-all duration-300">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
             </div>
+            */}
+            <img src={appLogo} alt="InnerVoice Logo" className="w-8 h-8 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-all duration-300" />
             <span className="text-lg font-bold bg-gradient-to-r from-brand-600 to-brand-500 bg-clip-text text-transparent">
               InnerVoice
             </span>

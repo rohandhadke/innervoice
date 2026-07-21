@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { getPosts } from '../api/posts';
+import { getPosts, getMyPosts } from '../api/posts';
 import { getSavedPosts } from '../api/saved';
 import { logMood } from '../api/moodlog';
 import PostCard from '../components/PostCard';
@@ -20,19 +20,20 @@ export default function Dashboard() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [postsRes, savedRes] = await Promise.all([
+      const [myPostsRes, postsRes, savedRes] = await Promise.all([
+        getMyPosts(),
         getPosts({ limit: 200 }),
         getSavedPosts(),
       ]);
+      setMyPosts(myPostsRes.data);
       setAllPosts(postsRes.data);
-      setMyPosts(postsRes.data.filter((p) => p.user_id === user?.id));
       setSavedPosts(savedRes.data);
     } catch {
       toast.error('Could not load dashboard');
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, []);
 
   useEffect(() => {
     fetchData();

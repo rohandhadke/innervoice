@@ -80,12 +80,24 @@ def build_post_response(post: Post, db: Session) -> dict:
 
 @router.post("/", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
 def create_post(data: PostCreate, db: Session = Depends(get_db), current_user: Optional[User] = Depends(get_optional_user)):
+    # Private posts MUST have an owner so the user can retrieve them later
+    if data.visibility == "private":
+        if not current_user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Login required for private posts"
+            )
+        user_id = current_user.id
+    else:
+        # Public posts: store user_id only if not anonymous
+        user_id = current_user.id if current_user and not data.is_anonymous else None
+
     post = Post(
         content=sanitize_content(data.content),
         is_anonymous=data.is_anonymous,
         mood=data.mood,
         visibility=data.visibility,
-        user_id=current_user.id if current_user and not data.is_anonymous else None
+        user_id=user_id
     )
     db.add(post)
     db.commit()

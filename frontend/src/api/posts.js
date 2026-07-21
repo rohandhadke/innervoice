@@ -6,6 +6,9 @@ export const createPost = (data) =>
 export const getPosts = (params = {}) =>
   api.get('/api/posts/', { params });
 
+export const getMyPosts = () =>
+  api.get('/api/users/me/posts');
+
 export const getPost = (postId) =>
   api.get(`/api/posts/${postId}`);
 

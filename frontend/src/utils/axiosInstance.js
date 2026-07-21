@@ -2,7 +2,7 @@ import axios from 'axios';
 import useAuthStore from '../store/authStore';
 
 const api = axios.create({
-  baseURL: 'https://innervoice-y7ti.onrender.com',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://innervoice-y7ti.onrender.com',
   headers: {
     'Content-Type': 'application/json',
   },
