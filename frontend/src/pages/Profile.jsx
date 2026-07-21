@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getMe } from '../api/auth';
-import { getPosts, getPost } from '../api/posts';
+import { getMyPosts, getPost } from '../api/posts';
 import { getSavedPosts } from '../api/users';
 import PostCard from '../components/PostCard';
 import useAuthStore from '../store/authStore';
@@ -32,15 +32,14 @@ export default function Profile() {
   const fetchMyPosts = useCallback(async () => {
     setLoadingPosts(true);
     try {
-      const res = await getPosts({ limit: 100 });
-      const filtered = res.data.filter((p) => p.user_id === user?.id);
-      setMyPosts(filtered);
+      const res = await getMyPosts();
+      setMyPosts(res.data);
     } catch {
       toast.error('Could not load your posts');
     } finally {
       setLoadingPosts(false);
     }
-  }, [user?.id]);
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated()) {
