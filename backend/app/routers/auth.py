@@ -5,9 +5,8 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserRegister, UserLogin, TokenResponse, OTPRequest, OTPVerify
 from app.utils.auth import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
+from app.utils.email import send_email
 import random
-import resend
-import os
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
@@ -71,14 +70,12 @@ def send_otp(data: OTPRequest, db: Session = Depends(get_db)):
     user.email_otp_expires_at = expires_at
     db.commit()
 
-    # send OTP email via Resend
-    resend.api_key = os.getenv("RESEND_API_KEY")
+    # send OTP email via SMTP
     try:
-        resend.Emails.send({
-            "from": os.getenv("MAIL_FROM"),
-            "to": user.email,
-            "subject": "InnerVoice — Email Verification OTP",
-            "html": f"""
+        send_email(
+            to=user.email,
+            subject="InnerVoice — Email Verification OTP",
+            html_body=f"""
                 <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto;">
                     <h2 style="color: #7c3aed;">Verify your InnerVoice email</h2>
                     <p>Hi {user.full_name or user.username},</p>
@@ -91,7 +88,7 @@ def send_otp(data: OTPRequest, db: Session = Depends(get_db)):
                     <p style="color: #888; font-size: 12px; margin-top: 32px;">— The InnerVoice Team</p>
                 </div>
             """
-        })
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to send OTP email: {str(e)}")
 
@@ -107,8 +104,8 @@ def verify_otp(data: OTPVerify, db: Session = Depends(get_db)):
     if not user.email_otp or not user.email_otp_expires_at:
         raise HTTPException(status_code=400, detail="No OTP found. Please request a new one.")
 
-    # check expiry
-    now = datetime.now(timezone.utc)
+    # check expiry (strip tzinfo — MySQL returns naive datetimes)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     if now > user.email_otp_expires_at:
         user.email_otp = None
         user.email_otp_expires_at = None
